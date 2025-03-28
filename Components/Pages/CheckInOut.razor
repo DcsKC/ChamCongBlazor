@@ -1,0 +1,93 @@
+﻿@page "/checkinout"
+@inject IHttpClientFactory HttpClientFactory
+@inject ProtectedSessionStorage SessionStorage
+@inject NavigationManager Navigation
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+
+<h3>Chấm công</h3>
+
+@if (lastCheckIn != null)
+{
+    <p>Lần check-in cuối: @lastCheckIn.CheckInTime</p>
+    @if (lastCheckIn.CheckOutTime.HasValue)
+    {
+        <p>Check-out: @lastCheckIn.CheckOutTime</p>
+    }
+}
+
+<div class="mt-3">
+    <button class="btn btn-success" @onclick="CheckIn">Check-in</button>
+    <button class="btn btn-warning" @onclick="CheckOut">Check-out</button>
+</div>
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="alert alert-info mt-2">@message</div>
+}
+
+@code {
+    private ChamCongBlazor.Models.ChamCong? lastCheckIn = null;
+    private string message = string.Empty;
+    private int employeeId;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var userSession = await SessionStorage.GetAsync<UserSession>("UserSession");
+            if (!userSession.Success || userSession.Value == null || userSession.Value.UserId <= 0)
+            {
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            employeeId = userSession.Value.UserId;
+            await LoadLastCheckIn();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadLastCheckIn()
+    {
+        var httpClient = HttpClientFactory.CreateClient("ChamCongAPI");
+        var response = await httpClient.GetFromJsonAsync<List<ChamCongBlazor.Models.ChamCong>>($"api/ChamCong/history?employeeId={employeeId}&filter=day");
+        lastCheckIn = response?.FirstOrDefault();
+    }
+
+    private async Task CheckIn()
+    {
+        var httpClient = HttpClientFactory.CreateClient("ChamCongAPI");
+        var response = await httpClient.PostAsJsonAsync("api/ChamCong/checkin", new { EmployeeId = employeeId });
+        if (response.IsSuccessStatusCode)
+        {
+            message = "Check-in thành công!";
+            await LoadLastCheckIn();
+        }
+        else
+        {
+            message = await response.Content.ReadAsStringAsync();
+        }
+    }
+
+    private async Task CheckOut()
+    {
+        var httpClient = HttpClientFactory.CreateClient("ChamCongAPI");
+        var response = await httpClient.PostAsJsonAsync("api/ChamCong/checkout", new { EmployeeId = employeeId });
+        if (response.IsSuccessStatusCode)
+        {
+            message = "Check-out thành công!";
+            await LoadLastCheckIn();
+        }
+        else
+        {
+            message = await response.Content.ReadAsStringAsync();
+        }
+    }
+}
+
+@code {
+    public class UserSession
+    {
+        public int UserId { get; set; }
+    }
+}

@@ -1,0 +1,167 @@
+﻿@page "/manage-employees"
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager Navigation
+@inject ProtectedSessionStorage SessionStorage
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+
+<h3>Quản lý nhân viên</h3>
+
+<!-- Thêm các nút điều hướng -->
+<div class="mb-3">
+    <button class="btn btn-secondary mr-2" @onclick="() => NavigateToHome()">Trang chủ</button>
+    <button class="btn btn-secondary mr-2" @onclick="() => NavigateToCheckInOut()">Chấm công</button>
+    <button class="btn btn-secondary mr-2" @onclick="() => NavigateToHistory()">Lịch sử chấm công</button>
+</div>
+
+<button class="btn btn-primary mb-3" @onclick="() => ShowAddForm = true">Thêm nhân viên</button>
+
+@if (ShowAddForm)
+{
+    <EditForm Model="newEmployee" OnValidSubmit="AddEmployee">
+        <DataAnnotationsValidator />
+        <div class="form-group">
+            <label>Mã nhân viên</label>
+            <InputText class="form-control" @bind-Value="newEmployee.EmployeeCode" />
+        </div>
+        <div class="form-group">
+            <label>Tên</label>
+            <InputText class="form-control" @bind-Value="newEmployee.Name" />
+        </div>
+        <div class="form-group">
+            <label>Phòng ban</label>
+            <InputText class="form-control" @bind-Value="newEmployee.Department" />
+        </div>
+        <div class="form-group">
+            <label>Chức vụ</label>
+            <InputText class="form-control" @bind-Value="newEmployee.Position" />
+        </div>
+        <div class="form-group">
+            <label>Email</label>
+            <InputText class="form-control" @bind-Value="newEmployee.Email" />
+        </div>
+        <div class="form-group">
+            <label>Mật khẩu</label>
+            <InputText type="password" class="form-control" @bind-Value="newEmployee.PasswordHash" />
+        </div>
+        <div class="form-group">
+            <label>Là quản lý?</label>
+            <InputCheckbox @bind-Value="newEmployee.IsManager" />
+        </div>
+        <button type="submit" class="btn btn-success">Thêm</button>
+        <button type="button" class="btn btn-secondary ml-2" @onclick="() => ShowAddForm = false">Hủy</button>
+    </EditForm>
+}
+
+<table class="table mt-3">
+    <thead>
+        <tr>
+            <th>Mã NV</th>
+            <th>Tên</th>
+            <th>Phòng ban</th>
+            <th>Chức vụ</th>
+            <th>Email</th>
+            <th>Quản lý</th>
+            <th>Hành động</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var employee in employees)
+        {
+            <tr>
+                <td>@employee.EmployeeCode</td>
+                <td>@employee.Name</td>
+                <td>@employee.Department</td>
+                <td>@employee.Position</td>
+                <td>@employee.Email</td>
+                <td>@(employee.IsManager ? "Có" : "Không")</td>
+                <td>
+                    <button class="btn btn-warning btn-sm" @onclick="() => EditEmployee(employee)">Sửa</button>
+                    <button class="btn btn-danger btn-sm" @onclick="() => DeleteEmployee(employee.Id)">Xóa</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<ChamCongBlazor.Models.Employee> employees = new();
+    private ChamCongBlazor.Models.Employee newEmployee = new();
+    private bool ShowAddForm = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var userSession = await SessionStorage.GetAsync<UserSession>("UserSession");
+            if (!userSession.Success || userSession.Value == null || userSession.Value.UserId <= 0)
+            {
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            await LoadEmployees();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadEmployees()
+    {
+        var httpClient = HttpClientFactory.CreateClient("ChamCongAPI");
+        employees = await httpClient.GetFromJsonAsync<List<ChamCongBlazor.Models.Employee>>("api/Employee/list") ?? new();
+    }
+
+    private async Task AddEmployee()
+    {
+        var httpClient = HttpClientFactory.CreateClient("ChamCongAPI");
+        var response = await httpClient.PostAsJsonAsync("api/Employee", newEmployee);
+        if (response.IsSuccessStatusCode)
+        {
+            ShowAddForm = false;
+            newEmployee = new();
+            await LoadEmployees();
+        }
+    }
+
+    private async Task EditEmployee(ChamCongBlazor.Models.Employee employee)
+    {
+        var httpClient = HttpClientFactory.CreateClient("ChamCongAPI");
+        var response = await httpClient.PutAsJsonAsync($"api/Employee/{employee.Id}", employee);
+        if (response.IsSuccessStatusCode)
+        {
+            await LoadEmployees();
+        }
+    }
+
+    private async Task DeleteEmployee(int id)
+    {
+        var httpClient = HttpClientFactory.CreateClient("ChamCongAPI");
+        var response = await httpClient.DeleteAsync($"api/Employee/{id}");
+        if (response.IsSuccessStatusCode)
+        {
+            await LoadEmployees();
+        }
+    }
+
+    // Các phương thức điều hướng
+    private void NavigateToHome()
+    {
+        Navigation.NavigateTo("/");
+    }
+
+    private void NavigateToCheckInOut()
+    {
+        Navigation.NavigateTo("/checkinout");
+    }
+
+    private void NavigateToHistory()
+    {
+        Navigation.NavigateTo("/history");
+    }
+}
+
+@code {
+    public class UserSession
+    {
+        public int UserId { get; set; }
+    }
+}

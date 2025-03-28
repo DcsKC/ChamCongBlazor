@@ -1,0 +1,48 @@
+﻿@inherits LayoutComponentBase
+@inject ProtectedSessionStorage SessionStorage
+@inject NavigationManager Navigation
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4">
+            @if (isLoggedIn)
+            {
+                <a href="/logout">Đăng xuất</a>
+            }
+            else
+            {
+                <a href="/login">Đăng nhập</a>
+            }
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+@code {
+    private bool isLoggedIn = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var userSession = await SessionStorage.GetAsync<UserSession>("UserSession");
+            isLoggedIn = userSession.Success && userSession.Value != null && userSession.Value.UserId > 0;
+            StateHasChanged();
+        }
+    }
+}
+
+@code {
+    public class UserSession
+    {
+        public int UserId { get; set; }
+    }
+}

@@ -1,0 +1,105 @@
+﻿@page "/history"
+@inject IHttpClientFactory HttpClientFactory
+@inject ProtectedSessionStorage SessionStorage
+@inject NavigationManager Navigation
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+
+<h3>Lịch sử chấm công</h3>
+
+<!-- Thêm các nút điều hướng -->
+<div class="mb-3">
+    <button class="btn btn-secondary mr-2" @onclick="() => NavigateToHome()">Trang chủ</button>
+    <button class="btn btn-secondary mr-2" @onclick="() => NavigateToCheckInOut()">Chấm công</button>
+    <button class="btn btn-secondary" @onclick="() => NavigateToManageEmployees()">Quản lý nhân viên</button>
+</div>
+
+<div class="form-group">
+    <label>Lọc theo:</label>
+    <select @bind="filter">
+        <option value="day">Ngày</option>
+        <option value="week">Tuần</option>
+        <option value="month">Tháng</option>
+    </select>
+    <button class="btn btn-primary ml-2" @onclick="LoadHistory">Lọc</button>
+</div>
+
+@if (history != null && history.Any())
+{
+    <table class="table mt-3">
+        <thead>
+            <tr>
+                <th>Ngày</th>
+                <th>Check-in</th>
+                <th>Check-out</th>
+                <th>Trễ</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var record in history)
+            {
+                <tr>
+                    <td>@record.CheckInTime.ToShortDateString()</td>
+                    <td>@record.CheckInTime.ToShortTimeString()</td>
+                    <td>@(record.CheckOutTime.HasValue ? record.CheckOutTime.Value.ToShortTimeString() : "Chưa check-out")</td>
+                    <td>@(record.IsLate ? "Có" : "Không")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>Không có dữ liệu chấm công.</p>
+}
+
+@code {
+    private List<ChamCongBlazor.Models.ChamCong> history = new();
+    private string filter = "month";
+    private int employeeId;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var userSession = await SessionStorage.GetAsync<UserSession>("UserSession");
+            if (!userSession.Success || userSession.Value == null || userSession.Value.UserId <= 0)
+            {
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            employeeId = userSession.Value.UserId;
+            await LoadHistory();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadHistory()
+    {
+        var httpClient = HttpClientFactory.CreateClient("ChamCongAPI");
+        history = await httpClient.GetFromJsonAsync<List<ChamCongBlazor.Models.ChamCong>>($"api/ChamCong/history?employeeId={employeeId}&filter={filter}") ?? new();
+    }
+
+    // Các phương thức điều hướng
+    private void NavigateToHome()
+    {
+        Navigation.NavigateTo("/");
+    }
+
+    private void NavigateToCheckInOut()
+    {
+        Navigation.NavigateTo("/checkinout");
+    }
+
+    private void NavigateToManageEmployees()
+    {
+        Navigation.NavigateTo("/manage-employees");
+    }
+}
+
+@code {
+    public class UserSession
+    {
+        public int UserId { get; set; }
+    }
+}

@@ -1,0 +1,57 @@
+﻿@page "/profile"
+@inject HttpClient Http
+@inject ProtectedSessionStorage SessionStorage
+@inject NavigationManager Navigation
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+
+<h3>Thông tin cá nhân</h3>
+
+@if (employee != null)
+{
+    <div>
+        <p><strong>Mã nhân viên:</strong> @employee.EmployeeCode</p>
+        <p><strong>Tên:</strong> @employee.Name</p>
+        <p><strong>Phòng ban:</strong> @employee.Department</p>
+        <p><strong>Chức vụ:</strong> @employee.Position</p>
+        <p><strong>Email:</strong> @employee.Email</p>
+        <p><strong>Quản lý:</strong> @(employee.IsManager ? "Có" : "Không")</p>
+    </div>
+}
+else
+{
+    <p>Đang tải...</p>
+}
+
+@code {
+    private ChamCongBlazor.Models.Employee? employee;
+    private int employeeId;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var userSession = await SessionStorage.GetAsync<UserSession>("UserSession");
+            if (!userSession.Success || userSession.Value == null || userSession.Value.UserId <= 0)
+            {
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            employeeId = userSession.Value.UserId;
+            await LoadProfile();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadProfile()
+    {
+        employee = await Http.GetFromJsonAsync<ChamCongBlazor.Models.Employee>($"api/Employee/{employeeId}");
+    }
+}
+
+@code {
+    public class UserSession
+    {
+        public int UserId { get; set; }
+    }
+}
