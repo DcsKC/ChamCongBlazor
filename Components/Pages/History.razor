@@ -6,13 +6,6 @@
 
 <h3>Lịch sử chấm công</h3>
 
-<!-- Thêm các nút điều hướng -->
-<div class="mb-3">
-    <button class="btn btn-secondary mr-2" @onclick="() => NavigateToHome()">Trang chủ</button>
-    <button class="btn btn-secondary mr-2" @onclick="() => NavigateToCheckInOut()">Chấm công</button>
-    <button class="btn btn-secondary" @onclick="() => NavigateToManageEmployees()">Quản lý nhân viên</button>
-</div>
-
 <div class="form-group">
     <label>Lọc theo:</label>
     <select @bind="filter">

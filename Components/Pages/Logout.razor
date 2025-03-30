@@ -9,7 +9,8 @@
         if (firstRender)
         {
             await SessionStorage.DeleteAsync("UserSession");
-            Navigation.NavigateTo("/login");
+            StateHasChanged(); // Cập nhật giao diện
+            Navigation.NavigateTo("/login", forceLoad: true); // Reload trang để cập nhật Layout
         }
     }
 }

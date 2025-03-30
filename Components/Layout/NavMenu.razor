@@ -1,4 +1,6 @@
-﻿<div class="nav-menu">
+﻿@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+
+<div class="nav-menu">
     <nav class="flex-column">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
@@ -15,10 +17,33 @@
                 <span class="oi oi-list-rich" aria-hidden="true"></span> Lịch sử chấm công
             </NavLink>
         </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="manage-employees">
-                <span class="oi oi-person" aria-hidden="true"></span> Quản lý nhân viên
-            </NavLink>
-        </div>
+        @if (UserIsManager)
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="manage-employees">
+                    <span class="oi oi-person" aria-hidden="true"></span> Quản lý nhân viên
+                </NavLink>
+            </div>
+        }
     </nav>
 </div>
+@code {
+    private bool UserIsManager = false; // Khai báo biến
+
+    [Inject] ProtectedSessionStorage SessionStorage { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var userSession = await SessionStorage.GetAsync<UserSession>("UserSession");
+
+        if (userSession.Success && userSession.Value != null)
+        {
+            UserIsManager = userSession.Value.UserIsManager;
+        }
+    }
+    public class UserSession
+    {
+        public int UserId { get; set; }
+        public bool UserIsManager { get; set; }
+    }
+}

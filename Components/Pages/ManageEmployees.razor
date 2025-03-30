@@ -6,13 +6,6 @@
 
 <h3>Quản lý nhân viên</h3>
 
-<!-- Thêm các nút điều hướng -->
-<div class="mb-3">
-    <button class="btn btn-secondary mr-2" @onclick="() => NavigateToHome()">Trang chủ</button>
-    <button class="btn btn-secondary mr-2" @onclick="() => NavigateToCheckInOut()">Chấm công</button>
-    <button class="btn btn-secondary mr-2" @onclick="() => NavigateToHistory()">Lịch sử chấm công</button>
-</div>
-
 <button class="btn btn-primary mb-3" @onclick="() => ShowAddForm = true">Thêm nhân viên</button>
 
 @if (ShowAddForm)
@@ -163,5 +156,6 @@
     public class UserSession
     {
         public int UserId { get; set; }
+        public bool UserIsManager { get; set; }
     }
 }
