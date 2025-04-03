@@ -9,17 +9,18 @@
         <div class="sidebar">
             <NavMenu />
         </div>
+        
     }
 
     <main>
         <div class="top-row px-4">
             @if (isLoggedIn)
             {
-                <a href="/logout">Đăng xuất</a>
+               
             }
             else
             {
-                <a href="/login">Đăng nhập</a>
+                <button @onclick="Login" type="button" class="btn btn-primary btn-lg">Đăng nhập</button>
             }
         </div>
 
@@ -42,11 +43,16 @@
         }
     }
 }
-
+@code{
+    private void Login()
+    {
+        Navigation.NavigateTo("/login");
+    }
+}
 @code {
     public class UserSession
     {
         public int UserId { get; set; }
-        public bool UserIsManager { get; set; }
+        public string UserRole { get; set; }
     }
 }

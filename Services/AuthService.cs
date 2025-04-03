@@ -17,5 +17,5 @@ public class AuthService
         return CurrentUser != null;
     }
 
-    public bool IsManager => CurrentUser?.IsManager == true;
+    public bool IsManager => CurrentUser?.Rules == "Manager"; // Sửa lại ở đây
 }

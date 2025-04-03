@@ -1,8 +1,10 @@
 ﻿using ChamCongBlazor;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
-
+using MudBlazor.Services;
 var builder = WebApplication.CreateBuilder(args);
-
+builder.Services.AddRazorPages();
+builder.Services.AddServerSideBlazor();
+builder.Services.AddMudServices();
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();

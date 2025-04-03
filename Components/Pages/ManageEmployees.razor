@@ -4,10 +4,9 @@
 @inject ProtectedSessionStorage SessionStorage
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 
-<h3>Quản lý nhân viên</h3>
-
-<button class="btn btn-primary mb-3" @onclick="() => ShowAddForm = true">Thêm nhân viên</button>
-
+@if (!ShowAddForm){
+    <button class="btn btn-primary mb-3" @onclick="ShowAddEmployeeForm">Thêm nhân viên</button>
+}
 @if (ShowAddForm)
 {
     <EditForm Model="newEmployee" OnValidSubmit="AddEmployee">
@@ -25,7 +24,7 @@
             <InputText class="form-control" @bind-Value="newEmployee.Department" />
         </div>
         <div class="form-group">
-            <label>Chức vụ</label>
+            <label>Vị trí</label>
             <InputText class="form-control" @bind-Value="newEmployee.Position" />
         </div>
         <div class="form-group">
@@ -37,23 +36,87 @@
             <InputText type="password" class="form-control" @bind-Value="newEmployee.PasswordHash" />
         </div>
         <div class="form-group">
-            <label>Là quản lý?</label>
-            <InputCheckbox @bind-Value="newEmployee.IsManager" />
+            <label>Chức vụ</label>
+            @if (UserRole == "Admin")
+            {
+                <InputSelect class="form-control" @bind-Value="newEmployee.Rules">
+                    <option value="Employee">Nhân viên</option>
+                    <option value="Manager">Quản lý</option>
+                </InputSelect>
+            }
+            else
+            {
+                <input class="form-control" value="@newEmployee.Rules" disabled />
+            }
         </div>
+        <br />
         <button type="submit" class="btn btn-success">Thêm</button>
         <button type="button" class="btn btn-secondary ml-2" @onclick="() => ShowAddForm = false">Hủy</button>
     </EditForm>
 }
-
+@if (editingEmployee != null)
+{
+    <h4>Chỉnh sửa nhân viên</h4>
+    <EditForm Model="editingEmployee" OnValidSubmit="SaveEditedEmployee">
+        <DataAnnotationsValidator />
+        @if (UserRole == "Admin" && editingEmployee.Rules == "Admin")
+        {
+            <div class="form-group">
+                <label>Mật khẩu mới</label>
+                <InputText type="password" class="form-control" @bind-Value="editingEmployee.PasswordHash" />
+            </div>
+        }
+        else
+        {
+            <div class="form-group">
+                <label>Mã nhân viên</label>
+                <InputText class="form-control" @bind-Value="editingEmployee.EmployeeCode" />
+            </div>        <div class="form-group">
+                <label>Tên</label>
+                <InputText class="form-control" @bind-Value="editingEmployee.Name" />
+            </div>        <div class="form-group">
+                <label>Phòng ban</label>
+                <InputText class="form-control" @bind-Value="editingEmployee.Department" />
+            </div>        <div class="form-group">
+                <label>Vị trí</label>
+                <InputText class="form-control" @bind-Value="editingEmployee.Position" />
+            </div>        <div class="form-group">
+                <label>Email</label>
+                <InputText class="form-control" @bind-Value="editingEmployee.Email" />
+            </div>        <div class="form-group">
+                <label>Mật khẩu mới (Để như cũ nếu không đổi)</label>
+                <InputText type="password" class="form-control" @bind-Value="editingEmployee.PasswordHash" />
+            </div>
+            <div class="form-group">
+                <label>Quyền</label>
+                @if (UserRole == "Admin")
+                {
+                    <InputSelect class="form-control" @bind-Value="editingEmployee.Rules">
+                        <option value="Employee">Nhân viên</option>
+                        <option value="Manager">Quản lý</option>
+                    </InputSelect>
+                }
+                else
+                {
+                    <input class="form-control" value="@editingEmployee.Rules
+                    " disabled />
+                }
+            </div>
+        }
+        <br />
+        <button type="submit" class="btn btn-success">Lưu</button>
+        <button type="button" class="btn btn-secondary ml-2" @onclick="CancelEdit">Hủy</button>
+    </EditForm>
+}
 <table class="table mt-3">
     <thead>
         <tr>
             <th>Mã NV</th>
             <th>Tên</th>
             <th>Phòng ban</th>
-            <th>Chức vụ</th>
+            <th>Vị trí</th>
             <th>Email</th>
-            <th>Quản lý</th>
+            <th>Quyền</th>
             <th>Hành động</th>
         </tr>
     </thead>
@@ -66,10 +129,17 @@
                 <td>@employee.Department</td>
                 <td>@employee.Position</td>
                 <td>@employee.Email</td>
-                <td>@(employee.IsManager ? "Có" : "Không")</td>
+                <td>@employee.Rules</td>
                 <td>
-                    <button class="btn btn-warning btn-sm" @onclick="() => EditEmployee(employee)">Sửa</button>
-                    <button class="btn btn-danger btn-sm" @onclick="() => DeleteEmployee(employee.Id)">Xóa</button>
+                    @if (employee.Rules != "Admin")
+                    {
+                        <button class="btn btn-warning btn-sm" @onclick="() => EditEmployee(employee)">Sửa</button>
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteEmployee(employee.Id)">Xóa</button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-warning btn-sm" @onclick="() => EditEmployee(employee)">Đổi mật khẩu</button>
+                    }
                 </td>
             </tr>
         }
@@ -77,9 +147,12 @@
 </table>
 
 @code {
+    private ChamCongBlazor.Models.Employee? editingEmployee = null;
     private List<ChamCongBlazor.Models.Employee> employees = new();
     private ChamCongBlazor.Models.Employee newEmployee = new();
     private bool ShowAddForm = false;
+    private string UserRole = string.Empty;
+
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -91,18 +164,32 @@
                 Navigation.NavigateTo("/login");
                 return;
             }
+            UserRole = userSession.Value.UserRole;
+            if (UserRole != "Admin" && UserRole != "Manager")
+            {
+                Navigation.NavigateTo("/");
+                return;
+            }
 
             await LoadEmployees();
             StateHasChanged();
         }
     }
-
+    //Load
     private async Task LoadEmployees()
     {
         var httpClient = HttpClientFactory.CreateClient("ChamCongAPI");
         employees = await httpClient.GetFromJsonAsync<List<ChamCongBlazor.Models.Employee>>("api/Employee/list") ?? new();
+        if (UserRole == "Admin")
+        {
+            employees = employees;
+        }
+        else if (UserRole == "Manager")
+        {
+            employees = employees.Where(e => e.Rules != "Manager" && e.Rules != "Admin").ToList(); // Chỉ lấy Employee
+        }
     }
-
+    //New
     private async Task AddEmployee()
     {
         var httpClient = HttpClientFactory.CreateClient("ChamCongAPI");
@@ -114,17 +201,39 @@
             await LoadEmployees();
         }
     }
-
-    private async Task EditEmployee(ChamCongBlazor.Models.Employee employee)
+    //Edit
+    private void EditEmployee(ChamCongBlazor.Models.Employee employee)
+    {
+        // Tạo một bản sao của nhân viên để tránh sửa trực tiếp trên danh sách
+        editingEmployee = new ChamCongBlazor.Models.Employee
+            {
+                Id = employee.Id,
+                EmployeeCode = employee.EmployeeCode,
+                Name = employee.Name,
+                Department = employee.Department,
+                Position = employee.Position,
+                Email = employee.Email,
+                Rules = employee.Rules
+            };
+    }
+    private async Task SaveEditedEmployee()
     {
         var httpClient = HttpClientFactory.CreateClient("ChamCongAPI");
-        var response = await httpClient.PutAsJsonAsync($"api/Employee/{employee.Id}", employee);
+
+        var response = await httpClient.PutAsJsonAsync($"api/Employee/{editingEmployee!.Id}", editingEmployee);
+
         if (response.IsSuccessStatusCode)
         {
+            editingEmployee = null;
             await LoadEmployees();
         }
     }
 
+    private void CancelEdit()
+    {
+        editingEmployee = null;
+    }
+    //Delete
     private async Task DeleteEmployee(int id)
     {
         var httpClient = HttpClientFactory.CreateClient("ChamCongAPI");
@@ -135,27 +244,19 @@
         }
     }
 
-    // Các phương thức điều hướng
-    private void NavigateToHome()
+    
+}
+@code {
+    private void ShowAddEmployeeForm()
     {
-        Navigation.NavigateTo("/");
-    }
-
-    private void NavigateToCheckInOut()
-    {
-        Navigation.NavigateTo("/checkinout");
-    }
-
-    private void NavigateToHistory()
-    {
-        Navigation.NavigateTo("/history");
+        ShowAddForm = true;
+        StateHasChanged(); // Cập nhật UI ngay lập tức
     }
 }
-
-@code {
+@code{
     public class UserSession
     {
         public int UserId { get; set; }
-        public bool UserIsManager { get; set; }
+        public String UserRole { get; set; } = string.Empty;
     }
 }

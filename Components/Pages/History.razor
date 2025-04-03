@@ -31,8 +31,8 @@
             @foreach (var record in history)
             {
                 <tr>
-                    <td>@record.CheckInTime.ToShortDateString()</td>
-                    <td>@record.CheckInTime.ToShortTimeString()</td>
+                    <td>@record.CheckInTime?.ToShortDateString()</td>
+                    <td>@record.CheckInTime?.ToShortTimeString()</td>
                     <td>@(record.CheckOutTime.HasValue ? record.CheckOutTime.Value.ToShortTimeString() : "Chưa check-out")</td>
                     <td>@(record.IsLate ? "Có" : "Không")</td>
                 </tr>

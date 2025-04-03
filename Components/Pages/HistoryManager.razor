@@ -1,0 +1,157 @@
+﻿@page "/historymanager"
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager Navigation
+@inject ProtectedSessionStorage SessionStorage
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using ChamCongBlazor.Models
+
+@if (attendanceHistory.Any() && showAttendanceHistory)
+{
+    <h4>Lịch sử chấm công</h4>
+    <button class="btn btn-secondary mt-3" @onclick="CloseAttendanceHistory">Đóng</button>
+    <table class="table mt-3">
+        <thead>
+            <tr>
+                <th>Ngày</th>
+                <th>Giờ vào</th>
+                <th>Giờ ra</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var record in attendanceHistory)
+            {
+                <tr>
+                    <td>@record.CheckInTime?.Date.ToString("yyyy-MM-dd")</td>
+                    <td>@record.CheckInTime?.ToString("HH:mm")</td>
+                    <td>@(record.CheckOutTime?.ToString("HH:mm") ?? "Chưa check out")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+<table class="table mt-3">
+    <thead>
+        <tr>
+            <th>Mã NV</th>
+            <th>Tên</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var emp in employeesWithHistory)
+        {
+            <tr>
+                <td>@emp.Employee.EmployeeCode</td>
+                <td>@emp.Employee.Name</td>
+                <td>
+                    <button class="btn btn-primary" @onclick="() => LoadAttendanceHistory(emp.Employee.Id)">
+                        Xem lịch sử chấm công
+                    </button>
+
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+
+@code {
+    private string UserRole = string.Empty;
+    private List<EmployeeWithHistory> employeesWithHistory = new();
+    private List<ChamCongBlazor.Models.Employee> employees = new();
+    private List<ChamCongBlazor.Models.ChamCong> attendanceHistory = new();
+    private bool showAttendanceHistory = false;
+}
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var userSession = await SessionStorage.GetAsync<UserSession>("UserSession");
+            if (!userSession.Success || userSession.Value == null || userSession.Value.UserId <= 0)
+            {
+                Navigation.NavigateTo("/login");
+                return;
+            }
+            UserRole = userSession.Value.UserRole;
+            if (UserRole != "Admin" && UserRole != "Manager")
+            {
+                Navigation.NavigateTo("/");
+                return;
+            }
+
+            await LoadEmployees();
+            StateHasChanged();
+        }
+    }
+}
+@code {
+    //load Employee
+    private async Task LoadEmployees()
+    {
+        var httpClient = HttpClientFactory.CreateClient("ChamCongAPI");
+        employees = await httpClient.GetFromJsonAsync<List<ChamCongBlazor.Models.Employee>>("api/Employee/list") ?? new();
+        if (UserRole == "Admin")
+        {
+            employees = employees.Where(e => e.Rules != "Admin").ToList();
+        }
+        else if (UserRole == "Manager")
+        {
+            employees = employees.Where(e => e.Rules != "Manager" && e.Rules != "Admin").ToList();
+        }
+        foreach (var emp in employees)
+        {
+            var chamCongHistory = await httpClient.GetFromJsonAsync<List<ChamCongBlazor.Models.ChamCong>>(
+                $"api/ChamCong/history?employeeId={emp.Id}&filter=month"
+            ) ?? new List<ChamCongBlazor.Models.ChamCong>();
+
+            double totalWorkHours = 0;
+
+            // Tính tổng giờ công của nhân viên
+            foreach (var record in chamCongHistory)
+            {
+                if (record.CheckInTime.HasValue && record.CheckOutTime.HasValue)
+                {
+                    var workDuration = record.CheckOutTime.Value - record.CheckInTime.Value;
+                    totalWorkHours += workDuration.TotalHours;
+                }
+            }
+
+            // Thêm giờ công vào danh sách nhân viên với lịch sử
+            employeesWithHistory.Add(new EmployeeWithHistory
+                {
+                    Employee = emp,
+                    WorkHours = totalWorkHours
+                });
+        }
+    }
+
+    //List chấm công
+    private async Task LoadAttendanceHistory(int employeeId)
+    {
+        var httpClient = HttpClientFactory.CreateClient("ChamCongAPI");
+        // Gọi API lấy dữ liệu chấm công theo nhân viên
+        attendanceHistory = await httpClient.GetFromJsonAsync<List<ChamCongBlazor.Models.ChamCong>>(
+            $"api/ChamCong/history?employeeId={employeeId}&filter=month"
+        ) ?? new();
+        showAttendanceHistory = true;
+    }
+    //Đóng lịch sử
+    private void CloseAttendanceHistory()
+    {
+        showAttendanceHistory = false;
+    }
+}
+@code {
+    public class UserSession
+    {
+        public int UserId { get; set; }
+        public String UserRole { get; set; } = string.Empty;
+    }
+    private class EmployeeWithHistory
+    {
+        public ChamCongBlazor.Models.Employee Employee { get; set; } = new();
+        public double WorkHours { get; set; } // Giờ công
+    }
+
+
+}

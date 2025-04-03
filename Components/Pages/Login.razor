@@ -43,7 +43,7 @@
                     var userSession = new UserSession
                         {
                             UserId = result.UserId,
-                            UserIsManager = result.UserIsManager
+                            UserRole = result.UserRole
                         };
                     await SessionStorage.SetAsync("UserSession", userSession);
                     Navigation.NavigateTo("/", forceLoad: true); // Force reload để cập nhật Layout
@@ -69,12 +69,12 @@
     public class LoginResponse
     {
         public int UserId { get; set; }
-        public bool UserIsManager { get; set; }
+        public String UserRole { get; set; }
     }
 
     public class UserSession
     {
         public int UserId { get; set; }
-        public bool UserIsManager { get; set; }
+        public String UserRole { get; set; }
     }
 }

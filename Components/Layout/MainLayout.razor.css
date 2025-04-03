@@ -1,7 +1,21 @@
+﻿/* Biến màu sắc */
+:root {
+    --primary-color: #4361ee;
+    --secondary-color: #3a0647;
+    --background-light: #f8f9fa;
+    --text-color: #212529;
+    --border-color: #e9ecef;
+    --shadow-sm: 0 .125rem .25rem rgba(0, 0, 0, 0.075);
+    --shadow-md: 0 .5rem 1rem rgba(0, 0, 0, 0.15);
+    --transition-speed: 0.3s;
+}
+
+/* CSS cho MainLayout.razor */
 .page {
     position: relative;
     display: flex;
     flex-direction: column;
+    min-height: 100vh;
 }
 
 main {
@@ -9,41 +23,60 @@ main {
 }
 
 .sidebar {
-    background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
+    background-image: linear-gradient(180deg, #3a86ff 0%, #7209b7 100%);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .top-row {
-    background-color: #f7f7f7;
-    border-bottom: 1px solid #d6d5d5;
+    background-color: white;
+    border-bottom: 1px solid #e2e8f0;
     justify-content: flex-end;
     height: 3.5rem;
     display: flex;
     align-items: center;
 }
 
-    .top-row ::deep a, .top-row ::deep .btn-link {
+    .top-row ::deep a,
+    .top-row ::deep .btn-link {
         white-space: nowrap;
         margin-left: 1.5rem;
         text-decoration: none;
+        color: #3a86ff;
+        font-weight: 500;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.25rem;
+        transition: all 0.2s ease;
     }
 
-    .top-row ::deep a:hover, .top-row ::deep .btn-link:hover {
-        text-decoration: underline;
-    }
+        .top-row ::deep a:hover,
+        .top-row ::deep .btn-link:hover {
+            background-color: rgba(58, 134, 255, 0.1);
+            color: #7209b7;
+        }
 
-    .top-row ::deep a:first-child {
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
+        .top-row ::deep a:first-child {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+article.content {
+    padding: 1.5rem;
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin: 1rem;
+    flex: 1;
+}
 
 @media (max-width: 640.98px) {
     .top-row {
         justify-content: space-between;
     }
 
-    .top-row ::deep a, .top-row ::deep .btn-link {
-        margin-left: 0;
-    }
+        .top-row ::deep a,
+        .top-row ::deep .btn-link {
+            margin-left: 0;
+        }
 }
 
 @media (min-width: 641px) {
@@ -56,6 +89,7 @@ main {
         height: 100vh;
         position: sticky;
         top: 0;
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .top-row {
@@ -64,13 +98,14 @@ main {
         z-index: 1;
     }
 
-    .top-row.auth ::deep a:first-child {
-        flex: 1;
-        text-align: right;
-        width: 0;
-    }
+        .top-row.auth ::deep a:first-child {
+            flex: 1;
+            text-align: right;
+            width: 0;
+        }
 
-    .top-row, article {
+    .top-row,
+    article {
         padding-left: 2rem !important;
         padding-right: 1.5rem !important;
     }
@@ -86,6 +121,7 @@ main {
     position: fixed;
     width: 100%;
     z-index: 1000;
+    border-top: 1px solid #ffeeba;
 }
 
     #blazor-error-ui .dismiss {
@@ -93,4 +129,8 @@ main {
         position: absolute;
         right: 0.75rem;
         top: 0.5rem;
+        background: transparent;
+        border: none;
+        font-size: 1.25rem;
+        color: #856404;
     }

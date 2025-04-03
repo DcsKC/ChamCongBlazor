@@ -14,7 +14,7 @@
         <p><strong>Phòng ban:</strong> @employee.Department</p>
         <p><strong>Chức vụ:</strong> @employee.Position</p>
         <p><strong>Email:</strong> @employee.Email</p>
-        <p><strong>Quản lý:</strong> @(employee.IsManager ? "Có" : "Không")</p>
+        <td>@(employee.Rules == "Manager" ? "Có" : "Không")</td>
     </div>
 }
 else

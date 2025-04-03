@@ -7,29 +7,45 @@
                 <span class="oi oi-home" aria-hidden="true"></span> Trang chủ
             </NavLink>
         </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="checkinout">
-                <span class="oi oi-clock" aria-hidden="true"></span> Chấm công
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="history">
-                <span class="oi oi-list-rich" aria-hidden="true"></span> Lịch sử chấm công
-            </NavLink>
-        </div>
-        @if (UserIsManager)
+        @if (UserRole != "Admin")
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="checkinout">
+                    <span class="oi oi-clock" aria-hidden="true"></span> Chấm công
+                </NavLink>
+            </div>
+        }
+        @if (UserRole == "Manager" || UserRole == "Admin")
         {
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="manage-employees">
                     <span class="oi oi-person" aria-hidden="true"></span> Quản lý nhân viên
                 </NavLink>
             </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="historymanager">
+                    <span class="oi oi-person" aria-hidden="true"></span> Quản lý lịch làm việc
+                </NavLink>
+            </div>
         }
+        else
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="history">
+                    <span class="oi oi-list-rich" aria-hidden="true"></span> Lịch sử chấm công
+                </NavLink>
+            </div>
+        }
+        <div class="nav-item px-3">   
+            <NavLink class="nav-link" href="/logout">
+                <span class="oi oi-list-rich" aria-hidden="true"></span> Đăng xuất
+            </NavLink>
+        </div>
+        
     </nav>
 </div>
 @code {
-    private bool UserIsManager = false; // Khai báo biến
-
+    private string UserRole = string.Empty;
     [Inject] ProtectedSessionStorage SessionStorage { get; set; }
 
     protected override async Task OnInitializedAsync()
@@ -38,12 +54,12 @@
 
         if (userSession.Success && userSession.Value != null)
         {
-            UserIsManager = userSession.Value.UserIsManager;
+            UserRole = userSession.Value.UserRole;
         }
     }
     public class UserSession
     {
         public int UserId { get; set; }
-        public bool UserIsManager { get; set; }
+        public String UserRole { get; set; } = string.Empty;
     }
 }
