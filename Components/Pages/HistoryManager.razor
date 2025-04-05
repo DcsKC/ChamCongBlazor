@@ -7,7 +7,6 @@
 
 @if (attendanceHistory.Any() && showAttendanceHistory)
 {
-    <h4>Lịch sử chấm công</h4>
     <button class="btn btn-secondary mt-3" @onclick="CloseAttendanceHistory">Đóng</button>
     <table class="table mt-3">
         <thead>
@@ -15,6 +14,7 @@
                 <th>Ngày</th>
                 <th>Giờ vào</th>
                 <th>Giờ ra</th>
+                <th>Trễ</th>
             </tr>
         </thead>
         <tbody>
@@ -24,6 +24,7 @@
                     <td>@record.CheckInTime?.Date.ToString("yyyy-MM-dd")</td>
                     <td>@record.CheckInTime?.ToString("HH:mm")</td>
                     <td>@(record.CheckOutTime?.ToString("HH:mm") ?? "Chưa check out")</td>
+                    <td>@(record.IsLate ? "Có" : "Không")</td>
                 </tr>
             }
         </tbody>
@@ -34,6 +35,9 @@
         <tr>
             <th>Mã NV</th>
             <th>Tên</th>
+            <th>Phòng ban</th>
+            <th>Vị trí</th>
+            <th>Hành động</th>
         </tr>
     </thead>
     <tbody>
@@ -42,11 +46,12 @@
             <tr>
                 <td>@emp.Employee.EmployeeCode</td>
                 <td>@emp.Employee.Name</td>
+                <td>@emp.Employee.Department</td>
+                <td>@emp.Employee.Position</td>
                 <td>
                     <button class="btn btn-primary" @onclick="() => LoadAttendanceHistory(emp.Employee.Id)">
-                        Xem lịch sử chấm công
+                        Lịch sử chấm công
                     </button>
-
                 </td>
             </tr>
         }
